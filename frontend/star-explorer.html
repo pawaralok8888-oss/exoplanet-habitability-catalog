@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Explorer - Habitability Catalog</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>STAR EXPLORER</h1>
+            <nav>
+                <a href="index.html">Dashboard</a>
+                <a href="star-explorer.html" class="active">Star Explorer</a>
+            </nav>
+        </header>
+
+        <div class="glass-panel">
+            <h2>Systems Overview</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">View all planetary bodies orbiting known host stars.</p>
+            <div id="starContainer">
+                Loading deep space data...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const container = document.getElementById('starContainer');
+            try {
+                // Fetch stars
+                const starRes = await fetch('http://localhost:5000/api/stars');
+                const stars = await starRes.json();
+                
+                // Fetch planets
+                const planetRes = await fetch('http://localhost:5000/api/exoplanets');
+                const planets = await planetRes.json();
+                
+                container.innerHTML = '';
+                
+                for (let star of stars) {
+                    const orbiting = planets.filter(p => p.star_id === star.star_id);
+                    if (orbiting.length === 0) continue;
+
+                    const starPanel = document.createElement('div');
+                    starPanel.style.marginBottom = '2rem';
+                    starPanel.style.padding = '1rem';
+                    starPanel.style.border = '1px dashed var(--panel-border)';
+                    starPanel.style.borderRadius = '8px';
+
+                    let planetsHtml = orbiting.map(p => {
+                        const score = parseFloat(p.predicted_habitability).toFixed(2);
+                        const c = score > 0.7 ? 'score-high' : (score > 0.3 ? 'score-med' : 'score-low');
+                        return `<span class="score-badge ${c}" style="margin-right:0.5rem">${p.name} (${score})</span>`;
+                    }).join('');
+
+                    starPanel.innerHTML = `
+                        <h3 style="color:var(--accent-purple); margin-bottom: 0.5rem;">⭐ Star: ${star.name}</h3>
+                        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">
+                            Temp: ${star.temperature}K | Mass: ${star.mass} Eu
+                        </p>
+                        <div>
+                            <strong>Orbiting Bodies:</strong><br>
+                            <div style="margin-top:0.5rem;">${planetsHtml}</div>
+                        </div>
+                    `;
+                    container.appendChild(starPanel);
+                }
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = 'Communication link failed.';
+            }
+        });
+    </script>
+</body>
+</html>
