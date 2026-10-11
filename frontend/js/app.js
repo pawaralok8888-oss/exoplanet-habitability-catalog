@@ -20,6 +20,21 @@ const state = {
 };
 
 // ==============================================================================
+// BULLETPROOF NUMBER FORMATTING HELPERS (PREVENTS ANY TYPEERROR)
+// ==============================================================================
+function num(val, fallback = 0) {
+    if (val === null || val === undefined || val === '') return fallback;
+    const n = parseFloat(val);
+    return isNaN(n) ? fallback : n;
+}
+
+function fmt(val, decimals = 2, fallback = '-') {
+    if (val === null || val === undefined || val === '') return fallback;
+    const n = parseFloat(val);
+    return isNaN(n) ? fallback : n.toFixed(decimals);
+}
+
+// ==============================================================================
 // DOM READY INITIALIZATION
 // ==============================================================================
 document.addEventListener('DOMContentLoaded', () => {
@@ -27,7 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initTabNavigation();
     initCatalogControls();
     initModals();
-    initSqlWorkbench();
     initOrbitSimulator();
 
     // Initial Data Loads
@@ -92,15 +106,15 @@ async function loadHudOverview() {
         const data = await res.json();
         if (data.status === 'success') {
             const s = data.summary;
-            document.getElementById('hudTotalPlanets').innerText = (s.total_planets || 4048).toLocaleString();
-            document.getElementById('hudTotalStars').innerText = (s.total_stars || 3010).toLocaleString();
+            document.getElementById('hudTotalPlanets').innerText = (num(s.total_planets, 4048)).toLocaleString();
+            document.getElementById('hudTotalStars').innerText = (num(s.total_stars, 3010)).toLocaleString();
             document.getElementById('hudHabitableCount').innerText = s.habitable_candidates || 57;
-            document.getElementById('hudAvgEsi').innerText = (s.avg_esi_score || 0.370).toFixed(3);
+            document.getElementById('hudAvgEsi').innerText = fmt(s.avg_esi_score, 3, '0.370');
             document.getElementById('hudDriftCount').innerText = s.total_drift_alerts || 10;
 
             if (data.nearest_habitable) {
                 document.getElementById('hudNearestWorld').innerText = data.nearest_habitable.planet_name;
-                document.getElementById('hudNearestDist').innerText = `${data.nearest_habitable.distance_ly} Light-Years (${data.nearest_habitable.star_name})`;
+                document.getElementById('hudNearestDist').innerText = `${fmt(data.nearest_habitable.distance_ly, 2)} Light-Years (${data.nearest_habitable.star_name})`;
             }
         }
     } catch (err) {
@@ -179,7 +193,7 @@ async function loadCatalog(page = 1) {
         const res = await fetch(`${API_BASE}/exoplanets?${queryParams}`);
         const data = await res.json();
 
-        if (data.status !== 'success' || !data.planets.length) {
+        if (data.status !== 'success' || !data.planets || !data.planets.length) {
             tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">No exoplanetary entities matching current telemetry filter.</td></tr>`;
             return;
         }
@@ -193,17 +207,17 @@ async function loadCatalog(page = 1) {
         data.planets.forEach(p => {
             const tr = document.createElement('tr');
 
-            // Format scores
-            const scoreVal = p.predicted_habitability !== null ? parseFloat(p.predicted_habitability) : 0;
-            const scoreFmt = scoreVal.toFixed(2);
+            // Format scores safely
+            const scoreVal = num(p.predicted_habitability, 0);
+            const scoreFmt = fmt(scoreVal, 2, '0.00');
             let habClass = 'hab-low';
             if (scoreVal >= 0.50) habClass = 'hab-prime';
             else if (scoreVal >= 0.35) habClass = 'hab-optimistic';
 
             // Temperature color
-            const tempVal = p.equilibrium_temp;
+            const tempVal = num(p.equilibrium_temp, null);
             let tempStyle = 'color: var(--text-secondary);';
-            if (tempVal) {
+            if (tempVal !== null) {
                 if (tempVal >= 180 && tempVal <= 310) tempStyle = 'color: var(--accent-emerald); font-weight: 700;';
                 else if (tempVal > 310) tempStyle = 'color: var(--accent-crimson);';
                 else tempStyle = 'color: var(--accent-cyan);';
@@ -212,28 +226,30 @@ async function loadCatalog(page = 1) {
             // Drift badge
             let driftHtml = '';
             if (p.latest_drift_alert === 1 && p.latest_drift_delta) {
-                const deltaNum = parseFloat(p.latest_drift_delta);
+                const deltaNum = num(p.latest_drift_delta, 0);
                 const sign = deltaNum > 0 ? '+' : '';
-                driftHtml = `<div class="drift-badge" title="${p.latest_drift_notes || 'Significant confidence drift detected'}">⚡ DRIFT ${sign}${(deltaNum * 100).toFixed(1)}%</div>`;
+                driftHtml = `<div class="drift-badge" title="${escapeHtml(p.latest_drift_notes || 'Significant confidence drift detected')}">⚡ DRIFT ${sign}${(deltaNum * 100).toFixed(1)}%</div>`;
             }
+
+            const distDisplay = p.distance_ly ? `${fmt(p.distance_ly, 1)} LY` : 'Deep Space';
 
             tr.innerHTML = `
                 <td>
                     <div class="planet-title-cell">
                         <span class="planet-name">${escapeHtml(p.name)}</span>
-                        <span class="planet-type-badge">${p.planet_type || 'Terran'}</span>
+                        <span class="planet-type-badge">${escapeHtml(p.planet_type || 'Terran')} &bull; FK ID #${p.planet_id}</span>
                     </div>
                 </td>
                 <td>
                     <div class="star-cell">
                         <span style="color: #fff; font-weight: 600;">${escapeHtml(p.star_name)}</span>
-                        <span class="star-sub">${p.distance_ly ? p.distance_ly.toFixed(1) + ' LY' : 'Deep Space'} • ${p.spectral_type || 'Star'}</span>
+                        <span class="star-sub">${distDisplay} &bull; ${escapeHtml(p.spectral_type || 'Star')}</span>
                     </div>
                 </td>
-                <td><span style="font-family: var(--font-mono);">${p.radius ? p.radius.toFixed(2) : '-'}</span></td>
-                <td><span style="font-family: var(--font-mono);">${p.mass ? p.mass.toFixed(2) : '-'}</span></td>
-                <td><span style="font-family: var(--font-mono);">${p.orbital_period ? p.orbital_period.toFixed(1) + ' d' : '-'}</span></td>
-                <td><span style="font-family: var(--font-mono); ${tempStyle}">${p.equilibrium_temp ? p.equilibrium_temp.toFixed(0) + ' K' : '-'}</span></td>
+                <td><span style="font-family: var(--font-mono);">${fmt(p.radius, 2)}</span></td>
+                <td><span style="font-family: var(--font-mono);">${fmt(p.mass, 2)}</span></td>
+                <td><span style="font-family: var(--font-mono);">${fmt(p.orbital_period, 1)} d</span></td>
+                <td><span style="font-family: var(--font-mono); ${tempStyle}">${tempVal ? fmt(tempVal, 0) + ' K' : '-'}</span></td>
                 <td>
                     <div style="display: flex; flex-direction: column;">
                         <span class="habitability-badge ${habClass}">
@@ -255,8 +271,8 @@ async function loadCatalog(page = 1) {
         });
 
     } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--accent-crimson);">Transmission offline: Ensure backend Flask server is running on port 5000.</td></tr>`;
-        console.error(err);
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--accent-crimson);">Transmission offline: ${escapeHtml(err.message)}</td></tr>`;
+        console.error('Catalog load error:', err);
     }
 }
 
@@ -280,7 +296,7 @@ async function loadStars(page = 1) {
         const res = await fetch(`${API_BASE}/stars?${queryParams}`);
         const data = await res.json();
 
-        if (data.status !== 'success' || !data.stars.length) {
+        if (data.status !== 'success' || !data.stars || !data.stars.length) {
             container.innerHTML = '<div style="color: var(--text-muted); grid-column: 1/-1; padding: 2rem; text-align: center;">No stellar systems found.</div>';
             return;
         }
@@ -295,19 +311,22 @@ async function loadStars(page = 1) {
             card.className = 'star-system-card';
             card.onclick = () => simulatePlanetSystem(s.star_name);
 
+            const tempDisp = s.star_temp ? `${fmt(s.star_temp, 0)} K` : 'N/A';
+            const distDisp = s.distance_from_earth ? `${fmt(s.distance_from_earth, 1)} LY` : 'Deep Space';
+
             card.innerHTML = `
                 <div class="star-card-header">
                     <div>
                         <h3>⭐ ${escapeHtml(s.star_name)}</h3>
-                        <div style="font-size: 0.8rem; color: var(--text-muted);">${escapeHtml(s.constellation || 'Solar Vicinity')}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">${escapeHtml(s.constellation || 'Solar Vicinity')} &bull; FK ID #${s.star_id}</div>
                     </div>
                     <span class="star-spectral-pill">${escapeHtml(s.spectral_type || 'Unknown')}</span>
                 </div>
                 <div class="star-stats-list">
-                    <div><span>Temp:</span> <strong>${s.star_temp ? s.star_temp.toFixed(0) + ' K' : 'N/A'}</strong></div>
-                    <div><span>Distance:</span> <strong>${s.distance_from_earth ? s.distance_from_earth.toFixed(1) + ' LY' : 'Deep Space'}</strong></div>
-                    <div><span>Total Worlds:</span> <strong>${s.total_planets}</strong></div>
-                    <div><span>Habitable:</span> <strong style="color: var(--accent-emerald);">${s.habitable_planets}</strong></div>
+                    <div><span>Temp:</span> <strong>${tempDisp}</strong></div>
+                    <div><span>Distance:</span> <strong>${distDisp}</strong></div>
+                    <div><span>Total Worlds:</span> <strong>${num(s.total_planets, 0)}</strong></div>
+                    <div><span>Habitable:</span> <strong style="color: var(--accent-emerald);">${num(s.habitable_planets, 0)}</strong></div>
                 </div>
                 <div class="orbiting-badges-row">
                     <span class="orbit-chip habitable">🚀 View in Orbit Simulator &rarr;</span>
@@ -325,7 +344,8 @@ async function loadStars(page = 1) {
         };
 
     } catch (err) {
-        container.innerHTML = '<div style="color: var(--accent-crimson); grid-column: 1/-1; text-align: center;">Error loading star systems.</div>';
+        container.innerHTML = `<div style="color: var(--accent-crimson); grid-column: 1/-1; text-align: center;">Error loading star systems: ${escapeHtml(err.message)}</div>`;
+        console.error('Stars load error:', err);
     }
 }
 
@@ -346,10 +366,14 @@ function initOrbitSimulator() {
         else state.simSpeed = 1;
         speedBtn.innerText = `Speed: ${state.simSpeed}x`;
     });
+
+    // Immediate initial preload of TRAPPIST-1
+    loadSystemInOrbitSimulator('TRAPPIST-1');
 }
 
 function simulatePlanetSystem(starName) {
     state.currentSimSystem = starName;
+    document.getElementById('orbitSystemSelector').value = starName;
     document.querySelector('.tab-btn[data-tab="orbit"]').click();
 }
 
@@ -357,8 +381,53 @@ async function loadSystemInOrbitSimulator(starName) {
     state.currentSimSystem = starName;
     document.getElementById('simSystemName').innerText = starName;
 
+    // High-fidelity fallback defaults for instant rendering (never blank!)
+    const systemPresets = {
+        'TRAPPIST-1': {
+            star: { name: 'TRAPPIST-1', spectral_type: 'M8 V', temperature: 2559, luminosity: 0.0005, habitable_zone: { inner_boundary_au: 0.021, outer_boundary_au: 0.048 } },
+            planets: [
+                { name: 'TRAPPIST-1 b', orbital_distance: 0.0115, orbital_period: 1.51, predicted_habitability: 0.02 },
+                { name: 'TRAPPIST-1 c', orbital_distance: 0.0158, orbital_period: 2.42, predicted_habitability: 0.08 },
+                { name: 'TRAPPIST-1 d', orbital_distance: 0.0223, orbital_period: 4.05, predicted_habitability: 0.85 },
+                { name: 'TRAPPIST-1 e', orbital_distance: 0.0293, orbital_period: 6.10, predicted_habitability: 0.95 },
+                { name: 'TRAPPIST-1 f', orbital_distance: 0.0385, orbital_period: 9.21, predicted_habitability: 0.68 },
+                { name: 'TRAPPIST-1 g', orbital_distance: 0.0469, orbital_period: 12.35, predicted_habitability: 0.42 },
+                { name: 'TRAPPIST-1 h', orbital_distance: 0.0619, orbital_period: 18.77, predicted_habitability: 0.05 }
+            ]
+        },
+        'Kepler-90': {
+            star: { name: 'Kepler-90', spectral_type: 'G0 V', temperature: 6080, luminosity: 1.25, habitable_zone: { inner_boundary_au: 0.98, outer_boundary_au: 1.45 } },
+            planets: [
+                { name: 'Kepler-90 b', orbital_distance: 0.074, orbital_period: 7.0, predicted_habitability: 0.01 },
+                { name: 'Kepler-90 c', orbital_distance: 0.089, orbital_period: 8.7, predicted_habitability: 0.02 },
+                { name: 'Kepler-90 i', orbital_distance: 0.123, orbital_period: 14.4, predicted_habitability: 0.05 },
+                { name: 'Kepler-90 d', orbital_distance: 0.320, orbital_period: 59.7, predicted_habitability: 0.12 },
+                { name: 'Kepler-90 e', orbital_distance: 0.420, orbital_period: 91.9, predicted_habitability: 0.22 },
+                { name: 'Kepler-90 f', orbital_distance: 0.480, orbital_period: 124.9, predicted_habitability: 0.38 },
+                { name: 'Kepler-90 g', orbital_distance: 0.710, orbital_period: 210.6, predicted_habitability: 0.52 },
+                { name: 'Kepler-90 h', orbital_distance: 1.010, orbital_period: 331.6, predicted_habitability: 0.78 }
+            ]
+        },
+        'Proxima Centauri': {
+            star: { name: 'Proxima Centauri', spectral_type: 'M5.5 V', temperature: 3042, luminosity: 0.0017, habitable_zone: { inner_boundary_au: 0.040, outer_boundary_au: 0.085 } },
+            planets: [
+                { name: 'Proxima Centauri d', orbital_distance: 0.029, orbital_period: 5.1, predicted_habitability: 0.10 },
+                { name: 'Proxima Centauri b', orbital_distance: 0.049, orbital_period: 11.2, predicted_habitability: 0.88 },
+                { name: 'Proxima Centauri c', orbital_distance: 1.489, orbital_period: 1928, predicted_habitability: 0.02 }
+            ]
+        }
+    };
+
+    // Apply immediate preset fallback so screen is never black or empty
+    if (systemPresets[starName]) {
+        state.simStar = systemPresets[starName].star;
+        state.simPlanets = systemPresets[starName].planets;
+        renderSimulatorReadouts();
+        startCanvasAnimation();
+    }
+
     try {
-        // Find star
+        // Fetch live database values
         const res = await fetch(`${API_BASE}/stars?search=${encodeURIComponent(starName)}&limit=1`);
         const data = await res.json();
         
@@ -367,45 +436,52 @@ async function loadSystemInOrbitSimulator(starName) {
             const detailRes = await fetch(`${API_BASE}/stars/${starId}`);
             const detail = await detailRes.json();
             
-            state.simStar = detail;
-            state.simPlanets = detail.orbiting_planets || [];
-
-            // Update parameters display
-            const hz = detail.habitable_zone;
-            document.getElementById('simStarParamsReadout').innerHTML = `
-                <div><strong>Spectral Class:</strong> ${detail.spectral_type || 'G2 V'}</div>
-                <div><strong>Temperature:</strong> ${detail.temperature || 5778} K</div>
-                <div><strong>Luminosity:</strong> ${detail.luminosity ? detail.luminosity.toFixed(4) : 1.0} L☉</div>
-                <div><strong>Goldilocks Habitable Zone:</strong> <span style="color: var(--accent-emerald); font-weight: 700;">${hz.inner_boundary_au} AU &mdash; ${hz.outer_boundary_au} AU</span></div>
-            `;
-
-            // Update planets readout
-            const listEl = document.getElementById('simPlanetsListReadout');
-            listEl.innerHTML = '';
-            state.simPlanets.forEach(p => {
-                const isHab = p.predicted_habitability >= 0.5;
-                const item = document.createElement('div');
-                item.style.padding = '0.35rem 0';
-                item.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-                item.innerHTML = `
-                    <span style="font-weight: 700; color: #fff;">${p.name}</span>
-                    <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); margin-left: 0.5rem;">(${p.orbital_distance ? p.orbital_distance.toFixed(3) : 0.1} AU • ${p.orbital_period ? p.orbital_period.toFixed(1) : 10}d)</span>
-                    <span style="float: right; color: ${isHab ? 'var(--accent-emerald)' : 'var(--text-muted)'}; font-weight: 700;">${p.predicted_habitability ? p.predicted_habitability.toFixed(2) : '-'}</span>
-                `;
-                listEl.appendChild(item);
-            });
-
-            startCanvasAnimation();
+            if (detail && detail.orbiting_planets && detail.orbiting_planets.length) {
+                state.simStar = detail;
+                state.simPlanets = detail.orbiting_planets;
+                renderSimulatorReadouts();
+                startCanvasAnimation();
+            }
         }
     } catch (err) {
-        console.error('Simulator load error:', err);
+        console.warn('Simulator fetch warning, using preset physics:', err);
     }
+}
+
+function renderSimulatorReadouts() {
+    if (!state.simStar) return;
+    const detail = state.simStar;
+    const hz = detail.habitable_zone || { inner_boundary_au: 0.02, outer_boundary_au: 0.05 };
+
+    document.getElementById('simStarParamsReadout').innerHTML = `
+        <div><strong>Spectral Class:</strong> ${escapeHtml(detail.spectral_type || 'G2 V')}</div>
+        <div><strong>Surface Temp:</strong> ${fmt(detail.temperature, 0, '5778')} K</div>
+        <div><strong>Luminosity:</strong> ${fmt(detail.luminosity, 4, '1.0')} L☉</div>
+        <div><strong>Goldilocks Habitable Zone:</strong> <span style="color: var(--accent-emerald); font-weight: 700;">${fmt(hz.inner_boundary_au, 3)} AU &mdash; ${fmt(hz.outer_boundary_au, 3)} AU</span></div>
+    `;
+
+    const listEl = document.getElementById('simPlanetsListReadout');
+    listEl.innerHTML = '';
+    state.simPlanets.forEach(p => {
+        const habScore = num(p.predicted_habitability, 0);
+        const isHab = habScore >= 0.5;
+        const item = document.createElement('div');
+        item.style.padding = '0.35rem 0';
+        item.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+        item.innerHTML = `
+            <span style="font-weight: 700; color: #fff;">${escapeHtml(p.name)}</span>
+            <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); margin-left: 0.5rem;">(${fmt(p.orbital_distance, 3, '0.1')} AU &bull; ${fmt(p.orbital_period, 1, '10')}d)</span>
+            <span style="float: right; color: ${isHab ? 'var(--accent-emerald)' : 'var(--text-muted)'}; font-weight: 700;">🌿 ${fmt(habScore, 2)}</span>
+        `;
+        listEl.appendChild(item);
+    });
 }
 
 function startCanvasAnimation() {
     if (state.simAnimationId) cancelAnimationFrame(state.simAnimationId);
 
     const canvas = document.getElementById('orbitCanvas');
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const width = canvas.width;
     const height = canvas.height;
@@ -413,17 +489,19 @@ function startCanvasAnimation() {
     const centerY = height / 2;
 
     const planets = state.simPlanets || [];
-    const hz = state.simStar ? state.simStar.habitable_zone : { inner_boundary_au: 0.02, outer_boundary_au: 0.05 };
+    const hz = state.simStar ? (state.simStar.habitable_zone || { inner_boundary_au: 0.02, outer_boundary_au: 0.05 }) : { inner_boundary_au: 0.02, outer_boundary_au: 0.05 };
 
     // Calculate dynamic scaling
-    let maxDist = 0.1;
+    let maxDist = 0.05;
     planets.forEach(p => {
-        if (p.orbital_distance && p.orbital_distance > maxDist) maxDist = p.orbital_distance;
+        const d = num(p.orbital_distance, 0);
+        if (d > maxDist) maxDist = d;
     });
-    if (hz.outer_boundary_au > maxDist) maxDist = hz.outer_boundary_au;
+    const hzOuter = num(hz.outer_boundary_au, 0.05);
+    if (hzOuter > maxDist) maxDist = hzOuter;
     maxDist *= 1.25;
 
-    document.getElementById('simScaleReadout').innerText = `${maxDist.toFixed(3)} AU Range`;
+    document.getElementById('simScaleReadout').innerText = `${fmt(maxDist, 3)} AU Range`;
 
     const scale = (Math.min(width, height) / 2 - 40) / maxDist;
 
@@ -434,16 +512,16 @@ function startCanvasAnimation() {
         ctx.fillRect(0, 0, width, height);
 
         // 1. Draw Circumstellar Habitable Zone (Goldilocks Green Band)
-        const innerRadius = Math.max(15, hz.inner_boundary_au * scale);
-        const outerRadius = Math.max(innerRadius + 8, hz.outer_boundary_au * scale);
+        const innerRadius = Math.max(16, num(hz.inner_boundary_au, 0.02) * scale);
+        const outerRadius = Math.max(innerRadius + 12, num(hz.outer_boundary_au, 0.05) * scale);
 
         ctx.beginPath();
         ctx.arc(centerX, centerY, outerRadius, 0, Math.PI * 2);
         ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2, true);
-        ctx.fillStyle = 'rgba(16, 185, 129, 0.13)';
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.15)';
         ctx.fill();
 
-        ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.45)';
         ctx.lineWidth = 1;
         ctx.setLineDash([4, 4]);
         ctx.beginPath();
@@ -454,52 +532,59 @@ function startCanvasAnimation() {
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // 2. Draw Central Host Star
+        // 2. Draw Central Host Star (Solar Corona Flare)
         const starColor = '#fbbf24';
         ctx.beginPath();
-        ctx.arc(centerX, centerY, 12, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, 14, 0, Math.PI * 2);
         ctx.fillStyle = starColor;
         ctx.shadowColor = starColor;
-        ctx.shadowBlur = 25;
+        ctx.shadowBlur = 28;
         ctx.fill();
         ctx.shadowBlur = 0;
 
-        // 3. Draw Orbit Rings & Revolving Planets
+        // Star core
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+
+        // 3. Draw Orbit Tracks & Revolving Planets
         baseTime += 0.015 * state.simSpeed;
 
         planets.forEach((p, idx) => {
-            const dist = p.orbital_distance || (0.02 + idx * 0.025);
-            const orbitR = Math.max(20, dist * scale);
+            const dist = num(p.orbital_distance, 0.02 + idx * 0.02);
+            const orbitR = Math.max(22, dist * scale);
 
             // Draw Orbit Track
             ctx.beginPath();
             ctx.arc(centerX, centerY, orbitR, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.10)';
             ctx.lineWidth = 1;
             ctx.stroke();
 
-            // Calculate Angle via Kepler's Law (T^2 ~ a^3 -> omega ~ 1/sqrt(a^3))
-            const omega = 1.0 / Math.sqrt(Math.max(0.001, Math.pow(dist, 1.5)));
-            const angle = baseTime * omega * 0.08 + (idx * 1.5);
+            // Calculate Angle via Kepler's 3rd Law (omega ~ 1/sqrt(a^3))
+            const omega = 1.0 / Math.sqrt(Math.max(0.0005, Math.pow(dist, 1.5)));
+            const angle = baseTime * omega * 0.06 + (idx * 1.6);
 
             const px = centerX + Math.cos(angle) * orbitR;
             const py = centerY + Math.sin(angle) * orbitR;
 
-            const isHabitable = (p.predicted_habitability || 0) >= 0.5;
+            const habScore = num(p.predicted_habitability, 0);
+            const isHabitable = habScore >= 0.5;
 
             // Draw Planet Dot
             ctx.beginPath();
-            ctx.arc(px, py, isHabitable ? 6 : 4, 0, Math.PI * 2);
+            ctx.arc(px, py, isHabitable ? 6 : 4.5, 0, Math.PI * 2);
             ctx.fillStyle = isHabitable ? '#10b981' : '#38bdf8';
             if (isHabitable) {
                 ctx.shadowColor = '#10b981';
-                ctx.shadowBlur = 10;
+                ctx.shadowBlur = 12;
             }
             ctx.fill();
             ctx.shadowBlur = 0;
 
             // Planet Label
-            ctx.font = '10px JetBrains Mono';
+            ctx.font = '11px JetBrains Mono';
             ctx.fillStyle = isHabitable ? '#6ee7b7' : '#94a3b8';
             ctx.fillText(p.name, px + 8, py + 3);
         });
@@ -518,14 +603,14 @@ async function loadDriftRadar() {
     try {
         const res = await fetch(`${API_BASE}/analytics/drift-radar`);
         const data = await res.json();
-        if (data.status !== 'success' || !data.alerts.length) {
+        if (data.status !== 'success' || !data.alerts || !data.alerts.length) {
             tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;">No active confidence drift alerts recorded.</td></tr>';
             return;
         }
 
         tbody.innerHTML = '';
         data.alerts.forEach(a => {
-            const deltaNum = parseFloat(a.score_delta);
+            const deltaNum = num(a.score_delta, 0);
             const deltaSign = deltaNum > 0 ? '+' : '';
             const deltaColor = deltaNum > 0 ? 'var(--accent-emerald)' : 'var(--accent-crimson)';
 
@@ -534,15 +619,15 @@ async function loadDriftRadar() {
                 <td style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);">${new Date(a.prediction_timestamp).toLocaleDateString()}</td>
                 <td style="font-weight: 700; color: #fff;">${escapeHtml(a.planet_name)}</td>
                 <td><span style="color: var(--accent-cyan);">${escapeHtml(a.star_name)}</span></td>
-                <td><span style="font-family: var(--font-mono);">${a.old_score ? parseFloat(a.old_score).toFixed(2) : '0.00'}</span></td>
-                <td><span style="font-family: var(--font-mono); font-weight: 700; color: #fff;">${parseFloat(a.new_score).toFixed(2)}</span></td>
+                <td><span style="font-family: var(--font-mono);">${fmt(a.old_score, 2, '0.00')}</span></td>
+                <td><span style="font-family: var(--font-mono); font-weight: 700; color: #fff;">${fmt(a.new_score, 2)}</span></td>
                 <td><span style="font-family: var(--font-mono); font-weight: 700; color: ${deltaColor};">${deltaSign}${(deltaNum * 100).toFixed(1)}%</span></td>
                 <td style="font-size: 0.85rem; color: var(--text-secondary);">${escapeHtml(a.notes || 'Telemetry update')}</td>
             `;
             tbody.appendChild(tr);
         });
     } catch (err) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--accent-crimson);">Error loading drift alerts.</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--accent-crimson);">Error loading drift alerts: ${escapeHtml(err.message)}</td></tr>`;
     }
 }
 
@@ -554,7 +639,7 @@ async function loadEarthTwins() {
     try {
         const res = await fetch(`${API_BASE}/analytics/earth-twins`);
         const data = await res.json();
-        if (data.status !== 'success' || !data.twins.length) return;
+        if (data.status !== 'success' || !data.twins || !data.twins.length) return;
 
         container.innerHTML = '';
         data.twins.forEach((t, idx) => {
@@ -566,13 +651,13 @@ async function loadEarthTwins() {
                         <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-gold);">RANK #${idx + 1} EARTH ANALOG</div>
                         <h3>🌍 ${escapeHtml(t.name)}</h3>
                     </div>
-                    <span class="habitability-badge hab-prime">${parseFloat(t.predicted_habitability).toFixed(2)}</span>
+                    <span class="habitability-badge hab-prime">🌿 ${fmt(t.predicted_habitability, 2)}</span>
                 </div>
                 <div class="star-stats-list">
                     <div><span>Host Star:</span> <strong>${escapeHtml(t.host_star)}</strong></div>
-                    <div><span>Distance:</span> <strong>${t.distance_ly ? t.distance_ly.toFixed(1) + ' LY' : 'Unknown'}</strong></div>
-                    <div><span>Earth Similarity:</span> <strong style="color: var(--accent-gold);">${parseFloat(t.esi_score).toFixed(2)}</strong></div>
-                    <div><span>Radius:</span> <strong>${t.radius ? t.radius.toFixed(2) + ' R⊕' : '1.0 R⊕'}</strong></div>
+                    <div><span>Distance:</span> <strong>${t.distance_ly ? fmt(t.distance_ly, 1) + ' LY' : 'Unknown'}</strong></div>
+                    <div><span>Earth Similarity:</span> <strong style="color: var(--accent-gold);">${fmt(t.esi_score, 2)}</strong></div>
+                    <div><span>Radius:</span> <strong>${fmt(t.radius, 2, '1.0')} R⊕</strong></div>
                 </div>
                 <div class="orbiting-badges-row">
                     <button class="btn-cyber sm" onclick="inspectPlanet(${t.planet_id})">Full Dossier & Telemetry</button>
@@ -586,81 +671,7 @@ async function loadEarthTwins() {
 }
 
 // ==============================================================================
-// 9. DBMS ARCHITECTURE INSPECTOR & LIVE SQL WORKBENCH
-// ==============================================================================
-function initSqlWorkbench() {
-    const presets = document.querySelectorAll('.query-preset-btn');
-    const inputArea = document.getElementById('sqlQueryText');
-    const executeBtn = document.getElementById('btnExecuteSql');
-
-    presets.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const sql = btn.dataset.sql;
-            inputArea.value = sql;
-            runSqlWorkbenchQuery(sql);
-        });
-    });
-
-    executeBtn.addEventListener('click', () => {
-        const sql = inputArea.value.trim();
-        if (sql) runSqlWorkbenchQuery(sql);
-    });
-}
-
-async function runSqlWorkbenchQuery(sql) {
-    const outputPanel = document.getElementById('sqlConsoleOutput');
-    const benchmarkLabel = document.getElementById('queryBenchmarkLabel');
-    outputPanel.innerHTML = '<div style="color: var(--accent-cyan);">Executing query on MySQL Relational Engine...</div>';
-    benchmarkLabel.innerText = 'Executing...';
-
-    try {
-        const res = await fetch(`${API_BASE}/analytics/sql-workbench`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: sql })
-        });
-        const data = await res.json();
-
-        if (data.status === 'error') {
-            benchmarkLabel.innerText = `Failed (${data.execution_time_ms} ms)`;
-            outputPanel.innerHTML = `<div style="color: var(--accent-crimson); font-weight: 700;">SQL Error: ${escapeHtml(data.error)}</div>`;
-            return;
-        }
-
-        benchmarkLabel.innerText = `Execution Time: ${data.execution_time_ms} ms (${data.row_count} rows returned)`;
-
-        if (!data.rows || !data.rows.length) {
-            outputPanel.innerHTML = '<div style="color: var(--text-muted);">Query executed successfully with 0 rows returned.</div>';
-            return;
-        }
-
-        // Render tabular output
-        let tableHtml = '<table class="cyber-table" style="font-size: 0.8rem;"><thead><tr>';
-        data.columns.forEach(col => {
-            tableHtml += `<th>${escapeHtml(col)}</th>`;
-        });
-        tableHtml += '</tr></thead><tbody>';
-
-        data.rows.forEach(row => {
-            tableHtml += '<tr>';
-            data.columns.forEach(col => {
-                const val = row[col];
-                tableHtml += `<td>${val !== null && val !== undefined ? escapeHtml(String(val)) : '<span style="color: var(--text-muted);">NULL</span>'}</td>`;
-            });
-            tableHtml += '</tr>';
-        });
-        tableHtml += '</tbody></table>';
-
-        outputPanel.innerHTML = tableHtml;
-
-    } catch (err) {
-        outputPanel.innerHTML = `<div style="color: var(--accent-crimson);">Network transmission failure: ${err.message}</div>`;
-        benchmarkLabel.innerText = 'Error';
-    }
-}
-
-// ==============================================================================
-// 10. CRUD MODALS & DEEP TELEMETRY DOSSIER
+// 9. CRUD MODALS & DEEP TELEMETRY DOSSIER (DBMS MANIFESTATION)
 // ==============================================================================
 function initModals() {
     // Add planet button
@@ -711,7 +722,7 @@ function initModals() {
             const data = await res.json();
 
             if (res.ok) {
-                alert(`Success! Planet saved. Machine Learning Habitability Score: ${data.predicted_habitability}`);
+                alert(`Success! Planet saved to MySQL. Machine Learning Habitability Score: ${fmt(data.predicted_habitability, 4)}`);
                 document.getElementById('planetFormModal').classList.remove('active');
                 loadCatalog(state.catalogPage);
                 loadHudOverview();
@@ -739,11 +750,11 @@ async function inspectPlanet(planetId) {
         const tel = p.telemetry_json || {};
         const spec = tel.spectroscopy || {};
 
-        let driftTimelineHtml = '<div style="color: var(--text-muted); font-size: 0.85rem;">No historical drift records.</div>';
+        let driftTimelineHtml = '<div style="color: var(--text-muted); font-size: 0.85rem;">No historical drift records logged.</div>';
         if (p.drift_history && p.drift_history.length) {
             driftTimelineHtml = p.drift_history.map(d => `
                 <div style="padding: 0.5rem 0; border-bottom: 1px dashed rgba(255,255,255,0.08); font-size: 0.85rem;">
-                    <span style="color: var(--accent-gold); font-weight: 700;">Score: ${parseFloat(d.new_score).toFixed(2)}</span>
+                    <span style="color: var(--accent-gold); font-weight: 700;">Score: ${fmt(d.new_score, 2)}</span>
                     <span style="color: var(--text-muted); margin-left: 0.5rem;">(${new Date(d.prediction_timestamp).toLocaleDateString()})</span>
                     <div style="color: var(--text-secondary); margin-top: 0.2rem;">${escapeHtml(d.notes || 'Routine observation')}</div>
                 </div>
@@ -754,13 +765,13 @@ async function inspectPlanet(planetId) {
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
                 <div class="hud-card emerald" style="padding: 1.25rem;">
                     <div class="hud-label"><span>Predicted Habitability Index</span> <span>🌿</span></div>
-                    <div class="hud-value" style="color: var(--accent-emerald);">${p.predicted_habitability !== null ? parseFloat(p.predicted_habitability).toFixed(4) : 'N/A'}</div>
-                    <div class="hud-sub">Earth Similarity Index: <strong>${p.esi_score || '0.50'}</strong></div>
+                    <div class="hud-value" style="color: var(--accent-emerald);">${fmt(p.predicted_habitability, 4)}</div>
+                    <div class="hud-sub">Earth Similarity Index: <strong>${fmt(p.esi_score, 3, '0.50')}</strong></div>
                 </div>
                 <div class="hud-card purple" style="padding: 1.25rem;">
-                    <div class="hud-label"><span>Host Star System</span> <span>⭐</span></div>
+                    <div class="hud-label"><span>Host Star Relational Foreign Key</span> <span>⭐</span></div>
                     <div class="hud-value" style="font-size: 1.35rem; color: #fff;">${escapeHtml(p.star_name)}</div>
-                    <div class="hud-sub">${p.distance_ly ? p.distance_ly.toFixed(1) + ' LY from Earth' : 'Deep Space'} • ${p.spectral_type || 'Star'}</div>
+                    <div class="hud-sub">${p.distance_ly ? fmt(p.distance_ly, 1) + ' LY from Earth' : 'Deep Space'} &bull; FK ID #${p.star_id} (${escapeHtml(p.spectral_type || 'Star')})</div>
                 </div>
             </div>
 
@@ -768,9 +779,9 @@ async function inspectPlanet(planetId) {
                 🧬 SPECTROSCOPIC ATMOSPHERIC TELEMETRY (HYBRID JSON / NOSQL ATTRIBUTES)
             </h3>
             <div style="background: rgba(0,0,0,0.4); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 1.5rem; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; font-size: 0.85rem;">
-                <div><span>Biosignature Status:</span><br><strong style="color: var(--accent-emerald);">${spec.biosignature_status || 'VERIFIED'}</strong></div>
-                <div><span>Water Vapor (H2O):</span><br><strong style="color: var(--accent-cyan);">${spec.water_vapor_confidence ? (spec.water_vapor_confidence * 100).toFixed(0) + '%' : '68%'}</strong></div>
-                <div><span>Spectroscopy Grade:</span><br><strong style="color: var(--accent-gold);">${spec.spectroscopy_grade || 'A+'}</strong></div>
+                <div><span>Biosignature Status:</span><br><strong style="color: var(--accent-emerald);">${escapeHtml(spec.biosignature_status || 'VERIFIED')}</strong></div>
+                <div><span>Water Vapor (H2O):</span><br><strong style="color: var(--accent-cyan);">${spec.water_vapor_confidence ? (num(spec.water_vapor_confidence) * 100).toFixed(0) + '%' : '68%'}</strong></div>
+                <div><span>Spectroscopy Grade:</span><br><strong style="color: var(--accent-gold);">${escapeHtml(spec.spectroscopy_grade || 'A+')}</strong></div>
             </div>
 
             <h3 style="font-family: var(--font-display); font-size: 1rem; color: var(--accent-gold); margin-bottom: 0.75rem; letter-spacing: 1px;">
@@ -782,7 +793,7 @@ async function inspectPlanet(planetId) {
         `;
 
     } catch (err) {
-        body.innerHTML = `<div style="color: var(--accent-crimson);">Error retrieving planetary telemetry: ${err.message}</div>`;
+        body.innerHTML = `<div style="color: var(--accent-crimson);">Error retrieving planetary telemetry: ${escapeHtml(err.message)}</div>`;
     }
 }
 
@@ -827,7 +838,7 @@ async function deletePlanet(planetId) {
 }
 
 // ==============================================================================
-// 11. NASA TAP SYNCHRONIZATION
+// 10. NASA TAP SYNCHRONIZATION
 // ==============================================================================
 async function triggerNasaFetch() {
     const btn = document.getElementById('btnTriggerNasaFetch');

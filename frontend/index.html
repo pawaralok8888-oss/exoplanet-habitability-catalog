@@ -8,20 +8,20 @@
 </head>
 <body>
     <div class="mission-wrapper">
-        <!-- TOP TELEMETRY STATUS BAR -->
+        <!-- TOP TELEMETRY STATUS BAR (DBMS MANIFESTATION) -->
         <div class="telemetry-ticker">
             <div class="ticker-items">
                 <div class="ticker-item">
                     <span class="pulse-dot"></span>
-                    <span>MYSQL 8.0 RELATIONAL ENGINE: ONLINE</span>
-                </div>
-                <div class="ticker-item">
-                    <span class="pulse-dot blue"></span>
-                    <span>RANDOM FOREST ML CLASSIFIER: ACTIVE (200 ESTIMATORS)</span>
+                    <span>MYSQL 8.0: 3NF NORMALIZED RELATIONAL ENGINE</span>
                 </div>
                 <div class="ticker-item">
                     <span class="pulse-dot purple"></span>
-                    <span>NASA TAP LINK: SYNCHRONIZED</span>
+                    <span>TRIGGERS: AUDIT LOGGING & DRIFT RADAR ACTIVE</span>
+                </div>
+                <div class="ticker-item">
+                    <span class="pulse-dot blue"></span>
+                    <span>RANDOM FOREST ML CLASSIFIER: 200 ESTIMATORS</span>
                 </div>
             </div>
             <div class="ticker-item">
@@ -34,15 +34,14 @@
         <header class="mission-header">
             <div class="brand-title">
                 <h1>🪐 EXOPLANET HABITABILITY CATALOG</h1>
-                <div class="badge-sub">FULL-STACK DBMS CAPSTONE PLATFORM // RELATIONAL • NOSQL HYBRID • ML PREDICTIVE</div>
+                <div class="badge-sub">ASTRONOMICAL DATABASE MANAGEMENT SYSTEM // RELATIONAL ARCHITECTURE &bull; MACHINE LEARNING</div>
             </div>
             <nav class="nav-tabs">
-                <button class="tab-btn active" data-tab="catalog"><span class="tab-icon">📊</span> Catalog</button>
+                <button class="tab-btn active" data-tab="catalog"><span class="tab-icon">📊</span> Planetary Catalog</button>
                 <button class="tab-btn" data-tab="stars"><span class="tab-icon">🌌</span> Star Systems</button>
                 <button class="tab-btn" data-tab="orbit"><span class="tab-icon">🪐</span> Orbit Simulator</button>
-                <button class="tab-btn" data-tab="drift"><span class="tab-icon">⚡</span> Drift Radar</button>
-                <button class="tab-btn" data-tab="twins"><span class="tab-icon">🧬</span> Earth Twins</button>
-                <button class="tab-btn" data-tab="dbms"><span class="tab-icon">💻</span> DBMS Console</button>
+                <button class="tab-btn" data-tab="drift"><span class="tab-icon">⚡</span> Confidence Drift Radar</button>
+                <button class="tab-btn" data-tab="twins"><span class="tab-icon">🧬</span> Top Earth Twins</button>
             </nav>
         </header>
 
@@ -51,12 +50,12 @@
             <div class="hud-card">
                 <div class="hud-label"><span>Worlds Catalogued</span> <span>🪐</span></div>
                 <div class="hud-value" id="hudTotalPlanets">4,048</div>
-                <div class="hud-sub">Exoplanetary candidates</div>
+                <div class="hud-sub">Relational exoplanets table</div>
             </div>
             <div class="hud-card purple">
                 <div class="hud-label"><span>Host Star Systems</span> <span>⭐</span></div>
                 <div class="hud-value" id="hudTotalStars">3,010</div>
-                <div class="hud-sub">Unique stellar hosts</div>
+                <div class="hud-sub">3NF Foreign Key References</div>
             </div>
             <div class="hud-card emerald">
                 <div class="hud-label"><span>Goldilocks Candidates</span> <span>🌿</span></div>
@@ -131,7 +130,7 @@
                         <thead>
                             <tr>
                                 <th>Planetary Entity</th>
-                                <th>Host Star System</th>
+                                <th>Host Star System (Foreign Key)</th>
                                 <th>Radius (R⊕)</th>
                                 <th>Mass (M⊕)</th>
                                 <th>Orbital Period</th>
@@ -142,7 +141,7 @@
                         </thead>
                         <tbody id="catalogTableBody">
                             <tr>
-                                <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                                <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--accent-cyan);">
                                     Connecting to MySQL Database Engine...
                                 </td>
                             </tr>
@@ -198,8 +197,8 @@
             <div class="glass-panel">
                 <div class="panel-header-row">
                     <div class="panel-title">
-                        <h2>Orbital Dynamics & Habitable Zone Simulator</h2>
-                        <p>Keplerian orbital simulation visualizing the circumstellar Goldilocks liquid-water zone around host stars.</p>
+                        <h2>Orbital Dynamics & Circumstellar Habitable Zone Simulator</h2>
+                        <p>Real-time Keplerian orbital simulation with circumstellar Goldilocks liquid-water zone calculated directly from stellar luminosity.</p>
                     </div>
                     <div class="btn-action-group">
                         <label style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">SELECT SYSTEM:</label>
@@ -224,19 +223,19 @@
                         </div>
                         <div class="goldilocks-legend">
                             <span class="legend-swatch"></span>
-                            <span>CIRCUMSTELLAR HABITABLE ZONE (0.02 - 0.05 AU)</span>
+                            <span>CIRCUMSTELLAR HABITABLE ZONE (LIQUID WATER BAND)</span>
                         </div>
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 1rem;">
                         <div class="hud-card" style="border-color: rgba(16, 185, 129, 0.4);">
-                            <div class="hud-label"><span>Stellar Goldilocks Parameters</span> <span>☀️</span></div>
+                            <div class="hud-label"><span>Host Star Astrophysics</span> <span>☀️</span></div>
                             <div id="simStarParamsReadout" style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.6;">
                                 Loading stellar physics...
                             </div>
                         </div>
                         <div class="hud-card purple" style="flex-grow: 1;">
-                            <div class="hud-label"><span>Orbiting Planetary Fleet</span> <span>🪐</span></div>
+                            <div class="hud-label"><span>Orbiting Planetary Fleet (Foreign Key Relational)</span> <span>🪐</span></div>
                             <div id="simPlanetsListReadout" style="font-size: 0.9rem; max-height: 250px; overflow-y: auto;">
                                 Loading planets...
                             </div>
@@ -253,15 +252,15 @@
             <div class="glass-panel">
                 <div class="panel-header-row">
                     <div class="panel-title">
-                        <h2>Confidence Drift Intelligence Terminal</h2>
-                        <p>Powered by MySQL <code>AFTER UPDATE</code> triggers, tracking historical volatility in machine learning habitability predictions as telescope telemetry refines.</p>
+                        <h2>Confidence Drift Radar (DBMS Trigger Telemetry)</h2>
+                        <p>Powered by MySQL <code>AFTER UPDATE</code> triggers, tracking volatility in machine learning habitability predictions as telescope telemetry refines.</p>
                     </div>
                     <div class="btn-cyber sm gold">Trigger Audit Active</div>
                 </div>
 
                 <div style="background: rgba(245, 158, 11, 0.07); border: 1px dashed rgba(245, 158, 11, 0.35); padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">
-                    <strong style="color: var(--accent-gold);">⚡ HOW CONFIDENCE DRIFT WORKS IN DBMS:</strong> 
-                    When scientists update a planet's mass or radius, a MySQL trigger computes the delta <code>&Delta; = NEW - OLD</code>. If the score shifts by &ge; 15%, the trigger flags an audit event (<code>is_drift_alert = 1</code>) and logs the physical justification to <code>habitability_log</code> without touching backend application logic!
+                    <strong style="color: var(--accent-gold);">⚡ HOW CONFIDENCE DRIFT MANIFESTS IN DBMS:</strong> 
+                    When scientists update a planet's mass or radius, a MySQL trigger computes the delta <code>&Delta; = NEW - OLD</code>. If the score shifts by &ge; 15%, the trigger flags an audit event (<code>is_drift_alert = 1</code>) and writes the physical justification to <code>habitability_log</code> without touching application logic!
                 </div>
 
                 <div class="table-responsive">
@@ -303,64 +302,6 @@
                 </div>
             </div>
         </section>
-
-        <!-- ==================================================================
-             TAB 6: DBMS ARCHITECTURE & SQL WORKBENCH
-             ================================================================== -->
-        <section class="tab-content" id="tab-dbms" style="display: none;">
-            <div class="glass-panel">
-                <div class="panel-header-row">
-                    <div class="panel-title">
-                        <h2>DBMS Architecture Inspector & Live SQL Sandbox</h2>
-                        <p>Interact with the database engine. Execute Stored Procedures, query Views, examine execution plans, and inspect ACID properties in real-time.</p>
-                    </div>
-                </div>
-
-                <div class="workbench-grid">
-                    <!-- PRESETS SIDEBAR -->
-                    <div class="saved-queries-sidebar">
-                        <h3>DBMS Artifacts</h3>
-                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">Click to load & execute:</div>
-
-                        <button class="query-preset-btn" data-sql="CALL sp_GetCatalogOverviewStats()">
-                            <span style="color: var(--accent-cyan); font-weight: 700;">PROCEDURE:</span><br>sp_GetCatalogOverviewStats()
-                        </button>
-                        <button class="query-preset-btn" data-sql="SELECT * FROM v_goldilocks_candidates LIMIT 15">
-                            <span style="color: var(--accent-emerald); font-weight: 700;">VIEW:</span><br>v_goldilocks_candidates
-                        </button>
-                        <button class="query-preset-btn" data-sql="SELECT * FROM v_confidence_drift_alerts LIMIT 15">
-                            <span style="color: var(--accent-gold); font-weight: 700;">VIEW:</span><br>v_confidence_drift_alerts
-                        </button>
-                        <button class="query-preset-btn" data-sql="SELECT * FROM v_top_earth_twins LIMIT 10">
-                            <span style="color: var(--accent-purple); font-weight: 700;">VIEW:</span><br>v_top_earth_twins
-                        </button>
-                        <button class="query-preset-btn" data-sql="SELECT * FROM v_star_systems_summary WHERE total_planets >= 4 LIMIT 10">
-                            <span style="color: var(--accent-blue); font-weight: 700;">VIEW:</span><br>v_star_systems_summary (4+ Planets)
-                        </button>
-                        <button class="query-preset-btn" data-sql="SELECT * FROM system_audit_trail ORDER BY performed_at DESC LIMIT 15">
-                            <span style="color: #fff; font-weight: 700;">AUDIT TRAIL:</span><br>system_audit_trail
-                        </button>
-                        <button class="query-preset-btn" data-sql="EXPLAIN SELECT * FROM exoplanets WHERE predicted_habitability >= 0.50">
-                            <span style="color: #f43f5e; font-weight: 700;">INDEX EXPLAIN:</span><br>EXPLAIN habitability query
-                        </button>
-                    </div>
-
-                    <!-- QUERY EDITOR & OUTPUT -->
-                    <div class="query-editor-box">
-                        <textarea class="sql-input-area" id="sqlQueryText" placeholder="Enter custom SQL query (SELECT, CALL, EXPLAIN, SHOW)...">CALL sp_GetCatalogOverviewStats()</textarea>
-                        
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <button class="btn-cyber primary" id="btnExecuteSql"><span>⚡</span> Execute Query</button>
-                            <span id="queryBenchmarkLabel" style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent-cyan);">Ready</span>
-                        </div>
-
-                        <div class="console-output-panel" id="sqlConsoleOutput">
-                            <div style="color: var(--text-muted);">Query output will display here with execution time benchmark...</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
     </div>
 
     <!-- ======================================================================
@@ -380,7 +321,7 @@
                         <input type="text" id="formName" required placeholder="e.g. Kepler-452 b">
                     </div>
                     <div class="form-group">
-                        <label>Host Star ID (or Name) *</label>
+                        <label>Host Star ID (Foreign Key) *</label>
                         <input type="number" id="formStarId" required value="1" placeholder="Star ID">
                     </div>
                 </div>
@@ -444,7 +385,7 @@
     </div>
 
     <!-- ======================================================================
-         MODAL: DEEP TELEMETRY & NOSQL INSPECTOR
+         MODAL: DEEP TELEMETRY & RELATIONAL ARCHITECTURE DOSSIER
          ====================================================================== -->
     <div class="modal-backdrop" id="detailModal">
         <div class="modal-box" style="width: 820px;">
