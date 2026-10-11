@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exoplanet Habitability Catalog // Slide Deck</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #070a12;
+            --card-bg: rgba(16, 23, 40, 0.85);
+            --cyan: #38bdf8;
+            --purple: #c084fc;
+            --emerald: #34d399;
+            --gold: #fbbf24;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(1.5px 1.5px at 50px 80px, rgba(255,255,255,0.7), transparent),
+                radial-gradient(1px 1px at 200px 220px, rgba(56,189,248,0.8), transparent),
+                radial-gradient(1.5px 1.5px at 350px 400px, rgba(192,132,252,0.7), transparent);
+            background-size: 600px 600px;
+            color: var(--text);
+            font-family: 'Rajdhani', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .slide-container {
+            width: 90vw;
+            max-width: 1300px;
+            height: 82vh;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            border-radius: 16px;
+            box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 30px rgba(56, 189, 248, 0.15);
+            padding: 3rem 4rem;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+        .slide-container.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.99); } to { opacity: 1; transform: scale(1); } }
+        
+        .tag-pill {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--cyan);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.3rem;
+            color: #fff;
+            margin-top: 0.3rem;
+            letter-spacing: 2px;
+        }
+        h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.6rem;
+            color: var(--cyan);
+            margin-top: 0.3rem;
+            letter-spacing: 1.5px;
+        }
+        .slide-body {
+            flex-grow: 1;
+            margin: 1.5rem 0;
+            display: flex;
+            gap: 2rem;
+            align-items: stretch;
+        }
+        .col-card {
+            flex: 1;
+            background: rgba(8, 12, 22, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+        .col-card.highlight {
+            border-color: var(--purple);
+            box-shadow: 0 0 18px rgba(192, 132, 252, 0.15);
+        }
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .code-block {
+            background: #03060d;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--cyan);
+            overflow-x: auto;
+            line-height: 1.5;
+        }
+        ul { list-style: none; }
+        li {
+            font-size: 1.1rem;
+            color: var(--text);
+            margin-bottom: 0.75rem;
+            position: relative;
+            padding-left: 1.25rem;
+            line-height: 1.4;
+        }
+        li::before {
+            content: "•";
+            color: var(--cyan);
+            font-size: 1.3rem;
+            position: absolute;
+            left: 0;
+            top: -0.1rem;
+        }
+        .slide-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: var(--muted);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 0.75rem;
+        }
+        .nav-controls {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .nav-btn {
+            background: rgba(56, 189, 248, 0.12);
+            color: var(--cyan);
+            border: 1px solid var(--cyan);
+            padding: 0.5rem 1.25rem;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .nav-btn:hover {
+            background: rgba(56, 189, 248, 0.3);
+            box-shadow: 0 0 12px var(--cyan);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SLIDE 1 -->
+    <div class="slide-container active" data-index="1">
+        <div>
+            <div class="tag-pill">DBMS CAPSTONE DEFENSE • GROUP PRESENTATION</div>
+            <h1>🪐 EXOPLANET HABITABILITY CATALOG</h1>
+            <p style="font-size: 1.25rem; color: var(--cyan); margin-top: 0.4rem;">
+                A Full-Stack Relational DBMS Architecture & Real-Time Machine Learning Platform
+            </p>
+        </div>
+        <div class="slide-body" style="align-items: center; justify-content: center;">
+            <div style="background: rgba(8, 12, 22, 0.75); border: 1px solid var(--purple); border-radius: 14px; padding: 2.5rem; max-width: 850px; text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🌌</div>
+                <h3 style="font-size: 1.6rem; color: #fff; margin-bottom: 0.75rem;">Enterprise-Grade Astronomical Data Management</h3>
+                <p style="font-size: 1.15rem; color: var(--muted); line-height: 1.6;">
+                    3NF Relational Decomposition &bull; Polyglot NoSQL Telemetry Documents &bull; Automated Confidence Drift Triggers &bull; Real-Time Keplerian Orbit Physics Simulation
+                </p>
+                <div style="margin-top: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: var(--emerald);">
+                    MySQL 8.0 &bull; Python Flask REST &bull; Scikit-Learn Random Forest &bull; HTML5 Canvas
+                </div>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span>Use Left/Right Arrow Keys or Space to navigate</span>
+            <span>Slide 1 / 10</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 2 -->
+    <div class="slide-container" data-index="2">
+        <div>
+            <div class="tag-pill">THE PROBLEM & MOTIVATION</div>
+            <h2>The Ingestion Challenge & The Research Gap</h2>
+        </div>
+        <div class="slide-body">
+            <div class="col-card">
+                <div class="card-title" style="color: var(--cyan);">🔭 Raw Data Bottleneck</div>
+                <ul>
+                    <li>Over 5,500 confirmed planets discovered by space telescopes (Kepler, TESS).</li>
+                    <li>Disparate CSV exports with over 100 raw columns, measurement noise, and missing values.</li>
+                    <li>Traditional storage lacks automated schema constraints.</li>
+                </ul>
+            </div>
+            <div class="col-card">
+                <div class="card-title" style="color: var(--gold);">📑 Static Catalog Flaw</div>
+                <ul>
+                    <li>Standard databases act as passive numerical silos.</li>
+                    <li>They record numbers, but do not compute habitability likelihood.</li>
+                    <li>Scientists must manually execute offline models to find habitable candidates.</li>
+                </ul>
+            </div>
+            <div class="col-card highlight">
+                <div class="card-title" style="color: var(--purple);">⚡ The Research Gap</div>
+                <ul>
+                    <li>Initial measurements have wide error margins.</li>
+                    <li>When follow-up observations arrive, typical DBs overwrite values silently.</li>
+                    <li><strong>OUR SOLUTION:</strong> Automated MySQL triggers that calculate variance (&Delta; &ge; 15%) and alert researchers!</li>
+                </ul>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span>Exoplanet Habitability Catalog</span>
+            <span>Slide 2 / 10</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 3 -->
+    <div class="slide-container" data-index="3">
+        <div>
+            <div class="tag-pill">SYSTEM ARCHITECTURE</div>
+            <h2>Full-Stack 3-Tier Enterprise Architecture</h2>
+        </div>
+        <div class="slide-body" style="flex-direction: column; gap: 1rem;">
+            <div class="col-card" style="border-left: 4px solid var(--cyan); padding: 1rem 1.5rem;">
+                <div class="card-title" style="color: var(--cyan); margin-bottom: 0.3rem;">Tier 1: Presentation Layer (Frontend UI)</div>
+                <p style="color: var(--muted); font-size: 1rem;">
+                    Dark Space Mission Control &bull; Keplerian 2D Canvas Orbit Simulator (T² &prop; a³) &bull; Confidence Drift Radar &bull; Asynchronous Fetch API with Debounce
+                </p>
+            </div>
+            <div class="col-card" style="border-left: 4px solid var(--purple); padding: 1rem 1.5rem;">
+                <div class="card-title" style="color: var(--purple); margin-bottom: 0.3rem;">Tier 2: Application Layer (Python / Flask API)</div>
+                <p style="color: var(--muted); font-size: 1rem;">
+                    Modular REST Blueprints &bull; Scikit-Learn Random Forest Classifier (200 Estimators) &bull; Custom Decimal JSON Serializer &bull; Live NASA TAP Sync
+                </p>
+            </div>
+            <div class="col-card" style="border-left: 4px solid var(--emerald); padding: 1rem 1.5rem;">
+                <div class="card-title" style="color: var(--emerald); margin-bottom: 0.3rem;">Tier 3: Database Layer (MySQL 8.0 Community Server)</div>
+                <p style="color: var(--muted); font-size: 1rem;">
+                    3NF Relational Decomposition: stars (3,010) ──&lt; exoplanets (4,048) &bull; Automated Audit Triggers &bull; Stored Procedures (&lt;15ms) &bull; Polyglot JSON Docs
+                </p>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span>Exoplanet Habitability Catalog</span>
+            <span>Slide 3 / 10</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 4 -->
+    <div class="slide-container" data-index="4">
+        <div>
+            <div class="tag-pill">DATABASE SCHEMA & 3NF</div>
+            <h2>Relational Modeling & Foreign Key Integrity</h2>
+        </div>
+        <div class="slide-body">
+            <div class="col-card">
+                <div class="card-title" style="color: var(--cyan);">⭐ PARENT: stars (3,010 Records)</div>
+                <div class="code-block">
+CREATE TABLE stars (<br>
+&nbsp;&nbsp;star_id INT AUTO_INCREMENT PRIMARY KEY,<br>
+&nbsp;&nbsp;name VARCHAR(100) NOT NULL UNIQUE,<br>
+&nbsp;&nbsp;spectral_type VARCHAR(30),<br>
+&nbsp;&nbsp;temperature DECIMAL(10,2),<br>
+&nbsp;&nbsp;radius DECIMAL(10,4),<br>
+&nbsp;&nbsp;mass DECIMAL(10,4),<br>
+&nbsp;&nbsp;luminosity DECIMAL(14,6),<br>
+&nbsp;&nbsp;distance_from_earth DECIMAL(12,4)<br>
+);
+                </div>
+            </div>
+            <div class="col-card">
+                <div class="card-title" style="color: var(--emerald);">🪐 CHILD: exoplanets (4,048 Records)</div>
+                <div class="code-block">
+CREATE TABLE exoplanets (<br>
+&nbsp;&nbsp;planet_id INT AUTO_INCREMENT PRIMARY KEY,<br>
+&nbsp;&nbsp;star_id INT NOT NULL, -- FOREIGN KEY<br>
+&nbsp;&nbsp;name VARCHAR(100) NOT NULL UNIQUE,<br>
+&nbsp;&nbsp;radius DECIMAL(10,4),<br>
+&nbsp;&nbsp;mass DECIMAL(10,4),<br>
+&nbsp;&nbsp;predicted_habitability DECIMAL(5,4),<br>
+&nbsp;&nbsp;telemetry_json JSON, -- NoSQL Doc<br>
+&nbsp;&nbsp;CONSTRAINT fk_planet_star FOREIGN KEY (star_id)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;REFERENCES stars(star_id) ON DELETE CASCADE<br>
+);
+                </div>
+                <div style="font-size: 0.95rem; color: var(--gold); margin-top: 0.75rem; font-weight: 700;">
+                    🔒 ON DELETE CASCADE prevents orphan planetary records when stars are decommissioned.
+                </div>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span>Exoplanet Habitability Catalog</span>
+            <span>Slide 4 / 10</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 5 -->
+    <div class="slide-container" data-index="5">
+        <div>
+            <div class="tag-pill">THE INNOVATION ENGINE</div>
+            <h2>Confidence Drift Trigger (AFTER UPDATE)</h2>
+        </div>
+        <div class="slide-body">
+            <div class="col-card" style="flex: 1.4;">
+                <div class="card-title" style="color: var(--gold);">⚡ trg_after_exoplanet_update</div>
+                <div class="code-block" style="font-size: 0.8rem;">
+CREATE TRIGGER trg_after_exoplanet_update AFTER UPDATE ON exoplanets<br>
+FOR EACH ROW BEGIN<br>
+&nbsp;&nbsp;DECLARE delta DECIMAL(6,4);<br>
+&nbsp;&nbsp;IF (NEW.predicted_habitability &lt;&gt; OLD.predicted_habitability) THEN<br>
+&nbsp;&nbsp;&nbsp;&nbsp;SET delta = NEW.predicted_habitability - OLD.predicted_habitability;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;IF ABS(delta) &gt;= 0.15 THEN -- 15% Scientific Shift Threshold<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SET is_drift_alert = 1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SET note_text = CONCAT('CONFIDENCE DRIFT: Delta ', ROUND(delta*100,1), '%');<br>
+&nbsp;&nbsp;&nbsp;&nbsp;END IF;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;INSERT INTO habitability_log (planet_id, old_score, new_score, delta, is_drift_alert, notes)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;VALUES (NEW.planet_id, OLD.predicted_habitability, NEW.predicted_habitability, delta, is_drift_alert, note_text);<br>
+&nbsp;&nbsp;END IF;<br>
+END;
+                </div>
+            </div>
+            <div class="col-card" style="flex: 1;">
+                <div class="card-title" style="color: var(--cyan);">🎯 Key DBMS Principles</div>
+                <ul>
+                    <li><strong>Pseudorecords:</strong> Uses OLD and NEW to track score before and after transaction.</li>
+                    <li><strong>Autonomous Logic:</strong> Database autonomously calculates variance and triggers alerts.</li>
+                    <li><strong>Audit Integrity:</strong> Writes immutable history to <code>habitability_log</code> table.</li>
+                </ul>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span>Exoplanet Habitability Catalog</span>
+            <span>Slide 5 / 10</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 6 -->
+    <div class="slide-container" data-index="6">
+        <div>
+            <div class="tag-pill">STORED PROCEDURES & POLYGLOT</div>
+            <h2>Server Procedures & NoSQL JSON Telemetry</h2>
+        </div>
+        <div class="slide-body">
+            <div class="col-card">
+                <div class="card-title" style="color: var(--cyan);">⚙️ Stored Procedure: sp_GetCatalogOverviewStats</div>
+                <ul>
+                    <li>Compiled Server Execution inside MySQL 8.0 engine.</li>
+                    <li>Replaces 6 separate network calls with 1 pre-compiled execution.</li>
+                    <li>Returns: Total Worlds (4,048), Stars (3,010), Habitable (57), Avg ESI (0.370), Drift Alerts (10), Nearest Habitable (4.24 LY).</li>
+                    <li><strong>Benchmark:</strong> Executes in under 15ms across 4,000+ records!</li>
+                </ul>
+            </div>
+            <div class="col-card highlight">
+                <div class="card-title" style="color: var(--purple);">📦 Polyglot JSON Document Store</div>
+                <ul>
+                    <li>Native MySQL 8.0 <code>telemetry_json</code> column on each planet.</li>
+                    <li>Stores raw spectroscopic atmospheric biosignatures (water vapor, methane, CO2).</li>
+                    <li>Combines Relational ACID integrity with NoSQL schema flexibility!</li>
+                </ul>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span>Exoplanet Habitability Catalog</span>
+            <span>Slide 6 / 10</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 7 -->
+    <div class="slide-container" data-index="7">
+        <div>
+            <div class="tag-pill">MACHINE LEARNING</div>
+            <h2>Random Forest Classifier (200 Estimators)</h2>
+        </div>
+        <div class="slide-body">
+            <div class="col-card">
+                <div class="card-title" style="color: var(--emerald);">🌳 The Model Architecture</div>
+                <ul>
+                    <li>Ensemble of 200 de-correlated decision trees.</li>
+                    <li>Non-linear boundary handling: Planets too hot or too cold are uninhabitable.</li>
+                    <li><strong>Extreme Class Imbalance:</strong> Only ~1.4% (57/4048) of planets are habitable.</li>
+                    <li>Handled via <code>class_weight='balanced'</code> to heavily penalize false negatives.</li>
+                </ul>
+            </div>
+            <div class="col-card">
+                <div class="card-title" style="color: var(--cyan);">🧬 10-Dimensional Feature Vector</div>
+                <ul>
+                    <li>1. Earth Similarity Index (ESI: 0.0 - 1.0)</li>
+                    <li>2. Habitable Zone Flag (Goldilocks liquid water)</li>
+                    <li>3. Planet Radius (R⊕) &bull; 4. Planet Mass (M⊕)</li>
+                    <li>5. Equilibrium Temperature (K) &bull; 6. Orbital Period (d)</li>
+                    <li>7. Stellar Flux &bull; 8. Star Temp &bull; 9. Star Radius &bull; 10. Star Mass</li>
+                </ul>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span>Exoplanet Habitability Catalog</span>
+            <span>Slide 7 / 10</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 8 -->
+    <div class="slide-container" data-index="8">
+        <div>
+            <div class="tag-pill">FRONTEND & SIMULATION</div>
+            <h2>Keplerian Orbit Dynamics & UI Manifestation</h2>
+        </div>
+        <div class="slide-body">
+            <div class="col-card">
+                <div class="card-title" style="color: var(--cyan);">🪐 2D Canvas Orbit Simulator</div>
+                <ul>
+                    <li>Renders stellar corona flare colored by spectral class.</li>
+                    <li>Dynamically draws the green circumstellar Habitable Zone ring calculated from stellar luminosity: <code>r = sqrt(L / 1.1) AU</code>.</li>
+                    <li>Revolving planets obey Kepler's Third Law (T² &prop; a³): orbital velocity &omega; &prop; 1/&radic;(a³).</li>
+                </ul>
+            </div>
+            <div class="col-card">
+                <div class="card-title" style="color: var(--purple);">🎨 Manifestation of DBMS Backend</div>
+                <ul>
+                    <li>Foreign Key transparency shown on every table row and card.</li>
+                    <li>Automated drift alert badges pulse when trigger flags shifts &ge; 15%.</li>
+                    <li>Deep inspection drawer displays the MySQL JSON document attributes.</li>
+                </ul>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span>Exoplanet Habitability Catalog</span>
+            <span>Slide 8 / 10</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 9 -->
+    <div class="slide-container" data-index="9">
+        <div>
+            <div class="tag-pill">GROUP PRESENTATION & DEMO</div>
+            <h2>Speaking Roles & Live Demo Walkthrough</h2>
+        </div>
+        <div class="slide-body">
+            <div class="col-card">
+                <div class="card-title" style="color: var(--purple);">👥 Team Member Roles</div>
+                <ul>
+                    <li><strong>Member 1:</strong> Introduction, NASA dataset, static catalog gap.</li>
+                    <li><strong>Member 2:</strong> 3NF schema, foreign key cascades, stored procedures.</li>
+                    <li><strong>Member 3:</strong> SQL Trigger walk-through, drift delta math, audit log.</li>
+                    <li><strong>Member 4:</strong> Random forest model, orbit simulator demo, live test.</li>
+                </ul>
+            </div>
+            <div class="col-card highlight">
+                <div class="card-title" style="color: var(--gold);">🎯 Live Demo Path</div>
+                <ul>
+                    <li>1. Show Mission Control HUD (4,048 worlds, 3,010 stars).</li>
+                    <li>2. Search 'TRAPPIST' & show Foreign Key reference ID #2802.</li>
+                    <li>3. Open Orbit Simulator & demonstrate green habitable zone.</li>
+                    <li>4. <strong>TRIGGER DRIFT:</strong> Edit Kepler-452 b mass to 500 & save.</li>
+                    <li>5. Show trigger firing and ⚡ DRIFT badge appearing!</li>
+                </ul>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span>Exoplanet Habitability Catalog</span>
+            <span>Slide 9 / 10</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 10 -->
+    <div class="slide-container" data-index="10">
+        <div>
+            <div class="tag-pill">DEFENSE & CONCLUSION</div>
+            <h2>Summary & Anticipated Viva Q&A</h2>
+        </div>
+        <div class="slide-body">
+            <div class="col-card">
+                <div class="card-title" style="color: var(--emerald);">✨ Capstone Achievements</div>
+                <ul>
+                    <li>3NF Normalized Schema with 3,010 stars & 4,048 exoplanets.</li>
+                    <li>Automated MySQL triggers managing Confidence Drift alerts.</li>
+                    <li>Polyglot NoSQL document storage inside MySQL 8.0.</li>
+                    <li>Integrated real-time Random Forest predictive intelligence.</li>
+                </ul>
+            </div>
+            <div class="col-card">
+                <div class="card-title" style="color: var(--cyan);">💬 Anticipated Viva Questions</div>
+                <ul>
+                    <li><strong>Why MySQL?</strong> Relational 1-to-many parent-child hierarchy + ACID integrity, with JSON document storage for spectroscopy.</li>
+                    <li><strong>What is Novel?</strong> Autonomous trigger tracking of model drift without application layer intervention.</li>
+                    <li><strong>Referential Integrity?</strong> <code>ON DELETE CASCADE</code> on host stars prevents orphan planets.</li>
+                </ul>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span>Thank you! Questions & Discussion</span>
+            <span>Slide 10 / 10</span>
+        </div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="nav-controls">
+        <button class="nav-btn" id="btnPrev">&larr; Previous</button>
+        <button class="nav-btn" id="btnNext">Next &rarr;</button>
+        <button class="nav-btn" id="btnFullscreen">Fullscreen (F)</button>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 10;
+
+        function showSlide(index) {
+            if (index < 1) index = 1;
+            if (index > totalSlides) index = totalSlides;
+            currentSlide = index;
+
+            document.querySelectorAll('.slide-container').forEach(s => s.classList.remove('active'));
+            const active = document.querySelector(`.slide-container[data-index="${currentSlide}"]`);
+            if (active) active.classList.add('active');
+        }
+
+        document.getElementById('btnPrev').addEventListener('click', () => showSlide(currentSlide - 1));
+        document.getElementById('btnNext').addEventListener('click', () => showSlide(currentSlide + 1));
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+                showSlide(currentSlide + 1);
+            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                showSlide(currentSlide - 1);
+            } else if (e.key.toLowerCase() === 'f') {
+                toggleFullscreen();
+            }
+        });
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen().catch(() => {});
+            }
+        }
+        document.getElementById('btnFullscreen').addEventListener('click', toggleFullscreen);
+    </script>
+</body>
+</html>
