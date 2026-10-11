@@ -16,7 +16,7 @@ def load_data():
     # Modify credentials as needed or use environment variables
     db_host = os.environ.get('DB_HOST', 'localhost')
     db_user = os.environ.get('DB_USER', 'root')
-    db_password = os.environ.get('DB_PASSWORD', '')
+    db_password = os.environ.get('DB_PASSWORD', 'abhi@2007')
     db_name = os.environ.get('DB_NAME', 'exoplanets_db')
 
     try:
