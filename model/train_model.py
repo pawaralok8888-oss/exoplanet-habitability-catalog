@@ -1,101 +1,61 @@
-import pandas as pd
-import numpy as np
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, precision_score, recall_score, classification_report
+"""Train and save the complete preprocessing + classifier pipeline."""
+import json
+from datetime import datetime, timezone
+from pathlib import Path
 import pickle
 
-# ---------------------------------------------------------
-# 1. Load Module B's feature-engineered dataset
-# ---------------------------------------------------------
-INPUT_FILE = "data/processed/exoplanets_features.csv"
-df = pd.read_csv(INPUT_FILE)
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import accuracy_score, classification_report, precision_score, recall_score
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
 
-# ---------------------------------------------------------
-# 2. Build the target column
-# P_HABITABLE: 0 = not habitable, 1 = habitable, 2 = maybe habitable
-# We collapse 1 and 2 into a single "potentially habitable" class
-# so this becomes clean binary classification.
-# ---------------------------------------------------------
-df["target"] = df["P_HABITABLE"].apply(lambda x: 1 if x in [1, 2] else 0)
+from feature_contract import FEATURE_COLUMNS, FEATURE_CONTRACT_VERSION
 
-print("Target class balance:")
-print(df["target"].value_counts())
-print()
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+INPUT_FILE = PROJECT_ROOT / "data" / "processed" / "exoplanets_features.csv"
+MODEL_FILE = PROJECT_ROOT / "model.pkl"
+MODEL_VERSION = "1.0.0"
+MODEL_METADATA_FILE = PROJECT_ROOT / "model" / "metadata.json"
 
-# ---------------------------------------------------------
-# 3. Choose features
-# Using a mix of Module B's engineered features + core planetary/stellar columns
-# ---------------------------------------------------------
-feature_columns = [
-    "esi_score",
-    "habitable_zone_flag",
-    "P_RADIUS",
-    "P_MASS",
-    "P_TEMP_EQUIL",
-    "P_PERIOD",
-    "P_FLUX",
-    "S_TEMPERATURE",
-    "S_RADIUS",
-    "S_MASS",
-]
 
-X = df[feature_columns]
-y = df["target"]
+def main():
+    df = pd.read_csv(INPUT_FILE)
+    df["target"] = df["P_HABITABLE"].isin([1, 2]).astype(int)
+    X = df[FEATURE_COLUMNS]
+    y = df["target"]
 
-# ---------------------------------------------------------
-# 4. Handle missing values
-# Many rows have NaN esi_score / other fields — impute with median
-# rather than dropping, since dropping would lose most habitable-zone
-# planets that don't have a full esi_score.
-# ---------------------------------------------------------
-X = X.fillna(X.median(numeric_only=True))
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+    pipeline = Pipeline([
+        ("imputer", SimpleImputer(strategy="median")),
+        ("classifier", RandomForestClassifier(
+            n_estimators=200, random_state=42, class_weight="balanced"
+        )),
+    ])
+    pipeline.fit(X_train, y_train)
+    predictions = pipeline.predict(X_test)
+    print("Accuracy:", accuracy_score(y_test, predictions))
+    print("Precision:", precision_score(y_test, predictions, zero_division=0))
+    print("Recall:", recall_score(y_test, predictions, zero_division=0))
+    print(classification_report(y_test, predictions, zero_division=0))
 
-# ---------------------------------------------------------
-# 5. Train/test split
-# stratify=y keeps the same habitable/not-habitable ratio in both
-# train and test sets — important given how imbalanced this is.
-# ---------------------------------------------------------
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
-)
+    with MODEL_FILE.open("wb") as model_file:
+        pickle.dump(pipeline, model_file)
+    print(f"Saved full prediction pipeline to {MODEL_FILE}")
 
-# ---------------------------------------------------------
-# 6. Train Random Forest
-# class_weight="balanced" tells the model to pay more attention to
-# the rare habitable class instead of ignoring it.
-# ---------------------------------------------------------
-model = RandomForestClassifier(
-    n_estimators=200,
-    random_state=42,
-    class_weight="balanced",
-)
-model.fit(X_train, y_train)
+    metadata = {
+        "model_version": MODEL_VERSION,
+        "feature_contract_version": FEATURE_CONTRACT_VERSION,
+        "feature_columns": FEATURE_COLUMNS,
+        "trained_at_utc": datetime.now(timezone.utc).isoformat(),
+    }
 
-# ---------------------------------------------------------
-# 7. Evaluate honestly
-# ---------------------------------------------------------
-preds = model.predict(X_test)
+    with MODEL_METADATA_FILE.open("w", encoding="utf-8") as metadata_file:
+        json.dump(metadata, metadata_file, indent=2)
+        metadata_file.write("\n")
 
-print("Accuracy:", accuracy_score(y_test, preds))
-print("Precision:", precision_score(y_test, preds, zero_division=0))
-print("Recall:", recall_score(y_test, preds, zero_division=0))
-print()
-print("Full report:")
-print(classification_report(y_test, preds, zero_division=0))
-
-# ---------------------------------------------------------
-# 8. Feature importance (good for your report/demo)
-# ---------------------------------------------------------
-importances = pd.Series(model.feature_importances_, index=feature_columns)
-print("Feature importance:")
-print(importances.sort_values(ascending=False))
-
-# ---------------------------------------------------------
-# 9. Save the trained model
-# ---------------------------------------------------------
-with open("model.pkl", "wb") as f:
-    pickle.dump(model, f)
-
-print()
-print("Model saved as model.pkl")
+if __name__ == "__main__":
+    main()

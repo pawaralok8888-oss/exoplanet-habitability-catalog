@@ -24,6 +24,6 @@ BEGIN
     SELECT predicted_habitability, prediction_timestamp
     FROM habitability_log
     WHERE planet_id = p_id
-    ORDER BY prediction_timestamp ASC;
+    ORDER BY prediction_timestamp ASC, log_id ASC;
 END$$
 DELIMITER ;

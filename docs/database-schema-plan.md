@@ -1,5 +1,9 @@
 # Database Schema Plan (Week 1, Module D)
 
+> Historical planning document. The implemented application schema is authoritative;
+> see [architecture-and-data-contract.md](architecture-and-data-contract.md) and
+> `../database/schema.sql` for the field names currently used by the API.
+
 This is a plain-English explanation of how our database will be structured.
 This is the starting point for Week 2, where we'll write the actual SQL.
 
@@ -95,5 +99,3 @@ stars (1) ────< (many) exoplanets (1) ────< (many) habitability_
 - [ ] Are these exact column names/types okay with everyone?
 - [ ] Any extra columns we're missing (e.g., planet radius, orbital period)?
 - [ ] Confirmed: this matches the data contract from Day 0?
-
-*Once the team agrees on this doc, we're ready to write the actual `CREATE TABLE` statements in Week 2.*

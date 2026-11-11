@@ -5,7 +5,12 @@ CREATE TABLE IF NOT EXISTS stars (
     temperature DECIMAL(10,2),
     radius DECIMAL(10,4),
     mass DECIMAL(10,4),
-    distance_from_earth DECIMAL(12,4)
+    distance_from_earth DECIMAL(12,4),
+    stellar_type VARCHAR(64),
+    age DECIMAL(10,4),
+    luminosity DECIMAL(14,8),
+    hz_conservative_inner_au DECIMAL(14,8),
+    hz_conservative_outer_au DECIMAL(14,8)
 );
 
 -- exoplanets table
@@ -17,11 +22,19 @@ CREATE TABLE IF NOT EXISTS exoplanets (
     mass DECIMAL(10,4),
     orbital_period DECIMAL(12,4),
     orbital_distance DECIMAL(12,6),
+    stellar_flux DECIMAL(12,6),
     equilibrium_temp DECIMAL(10,2),
     esi_score DECIMAL(5,4),
     habitable_zone_flag TINYINT(1),
     predicted_habitability DECIMAL(5,4),
     discovery_year INT,
+    density DECIMAL(14,8),
+    gravity DECIMAL(14,8),
+    escape_velocity DECIMAL(14,8),
+    habitable_zone_optimistic_flag TINYINT(1),
+    detection_method VARCHAR(100),
+    planet_type VARCHAR(64),
+    data_source VARCHAR(100),
     last_updated DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (star_id) REFERENCES stars(star_id) ON DELETE SET NULL
 );

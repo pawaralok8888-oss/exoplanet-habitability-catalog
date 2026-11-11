@@ -25,31 +25,12 @@ os.makedirs("data/processed", exist_ok=True)
 
 
 # ---------------------------------------------------------
-# 1. HABITABLE ZONE FLAG
+# 1. CONSERVATIVE HABITABLE-ZONE FLAG
 # ---------------------------------------------------------
-# A planet is considered to be in the conservative
-# habitable zone when its incident stellar flux lies
-# between the conservative HZ minimum and maximum.
-
-def calculate_habitable_zone(row):
-
-    flux = row["P_FLUX"]
-    hz_min = row["S_HZ_CON_MIN"]
-    hz_max = row["S_HZ_CON_MAX"]
-
-    if pd.isna(flux) or pd.isna(hz_min) or pd.isna(hz_max):
-        return np.nan
-
-    if hz_min <= flux <= hz_max:
-        return 1
-
-    return 0
-
-
-df["habitable_zone_flag"] = df.apply(
-    calculate_habitable_zone,
-    axis=1
-)
+# P_HABZONE_CON is the catalog's precomputed conservative-zone flag.
+# S_HZ_CON_MIN/MAX are orbital-distance boundaries (AU), while P_FLUX is
+# incident flux (Earth = 1); comparing those values directly mixes units.
+df["habitable_zone_flag"] = pd.to_numeric(df["P_HABZONE_CON"], errors="coerce")
 
 
 # ---------------------------------------------------------

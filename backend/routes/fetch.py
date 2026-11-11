@@ -1,44 +1,40 @@
 from flask import Blueprint, jsonify
-from db import get_db_connection
 import requests
 
-fetch_bp = Blueprint('fetch', __name__)
+import repositories
 
-@fetch_bp.route('/fetch-new', methods=['POST'])
+
+fetch_bp = Blueprint("fetch", __name__)
+NASA_TAP_URL = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync"
+NASA_QUERY = "select top 5 pl_name,pl_rade,pl_bmasse,pl_orbper,pl_orbsmax,pl_insol,pl_eqt,disc_year from ps"
+
+
+@fetch_bp.route("/fetch-new", methods=["POST"])
 def fetch_new_planets():
-    # Example logic to query NASA TAP API
-    # Since this is a course project, we simulate or do a basic pull
     try:
-        url = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=select+top+5+pl_name,pl_radj,pl_bmassj,pl_orbper,disc_year+from+ps&format=json"
-        response = requests.get(url, timeout=10)
+        response = requests.get(
+            NASA_TAP_URL,
+            params={"query": NASA_QUERY, "format": "json"},
+            timeout=10,
+        )
         response.raise_for_status()
-        data = response.json()
-        
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
+        records = response.json()
         inserted = 0
-        for row in data:
-            # basic insert logic, skip if exists
-            cursor.execute("SELECT planet_id FROM exoplanets WHERE name = %s", (row.get('pl_name'),))
-            if cursor.fetchone():
+        for row in records:
+            name = row.get("pl_name")
+            if not name or repositories.find_planet_by_name(name):
                 continue
-                
-            cursor.execute("""
-                INSERT INTO exoplanets (name, radius, mass, orbital_period, discovery_year)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (
-                row.get('pl_name'),
-                row.get('pl_radj'),
-                row.get('pl_bmassj'),
-                row.get('pl_orbper'),
-                row.get('disc_year')
-            ))
+            repositories.import_planet({
+                "name": name,
+                "radius": row.get("pl_rade"),
+                "mass": row.get("pl_bmasse"),
+                "orbital_period": row.get("pl_orbper"),
+                "orbital_distance": row.get("pl_orbsmax"),
+                "stellar_flux": row.get("pl_insol"),
+                "equilibrium_temp": row.get("pl_eqt"),
+                "discovery_year": row.get("disc_year"),
+            })
             inserted += 1
-            
-        conn.commit()
-        conn.close()
-        
         return jsonify({"message": f"Successfully fetched and inserted {inserted} new planets."})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except (requests.RequestException, ValueError) as exc:
+        return jsonify({"error": f"NASA data could not be fetched: {exc}"}), 502

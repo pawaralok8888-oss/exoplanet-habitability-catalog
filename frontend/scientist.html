@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f6fa">
+  <title>Scientist workspace — Orbit Atlas</title>
+  <link rel="stylesheet" href="css/style.css?v=orbit-atlas-5">
+  <link rel="stylesheet" href="css/scientist.css?v=4">
+  <script src="js/scientist.js?v=4" defer></script>
+</head>
+<body class="scientist-page">
+  <a class="skip-link" href="#research-main">Skip to research dashboard</a>
+  <header class="topbar scientist-topbar">
+    <a class="brand" href="index.html" aria-label="Orbit Atlas home">
+      <span class="brand-mark" aria-hidden="true"><span></span></span>
+      <span><strong>ORBIT ATLAS</strong><small>SCIENTIST WORKSPACE</small></span>
+    </a>
+    <div class="topbar-actions">
+      <span id="researchState" class="catalog-state">Connecting to catalog</span>
+      <a class="button button-secondary" href="index.html">← Planet explorer</a>
+      <button class="button button-secondary" id="researchRefresh" type="button">Refresh</button>
+    </div>
+  </header>
+
+  <main id="research-main" class="research-shell">
+    <div class="research-hero">
+      <div>
+        <p class="eyebrow">RESEARCH WORKSPACE</p>
+        <h1>Evidence before the score.</h1>
+        <p>Start with the candidate ranking, inspect the physical evidence, then check whether the model assessment is stable.</p>
+      </div>
+      <div class="preview-notice" id="researchPreviewNotice" hidden><span class="preview-dot" aria-hidden="true"></span>PHL catalog sample · model scores calculated locally</div>
+    </div>
+
+    <section class="question-strip" aria-label="Four scientific questions">
+      <div><span>01</span><strong>Earth-like?</strong><small>ESI components</small></div>
+      <div><span>02</span><strong>In the habitable zone?</strong><small>Flux and conservative HZ</small></div>
+      <div><span>03</span><strong>How much to trust?</strong><small>Inputs observed or imputed</small></div>
+      <div><span>04</span><strong>Has it changed?</strong><small>Timestamped score history</small></div>
+    </section>
+
+    <section class="research-toolbar" aria-label="Candidate filters">
+      <label class="research-search" for="candidateSearch"><span aria-hidden="true">⌕</span><input id="candidateSearch" type="search" placeholder="Search planet or host star" autocomplete="off"></label>
+      <label class="filter-field" for="hzFilter"><span>Conservative HZ</span><select id="hzFilter"><option value="all">All records</option><option value="1">Inside</option><option value="0">Outside</option><option value="unknown">Unknown</option></select></label>
+      <label class="filter-field" for="scoreFilter"><span>Model class</span><select id="scoreFilter"><option value="all">All estimates</option><option value="high">High · ≥ 0.70</option><option value="medium">Medium · 0.40–0.69</option><option value="low">Low · &lt; 0.40</option><option value="unscored">Not scored</option></select></label>
+      <label class="filter-check" for="driftOnly"><input id="driftOnly" type="checkbox"><span>Drifted only</span></label>
+    </section>
+
+    <div id="researchStatus" class="research-status" role="status" aria-live="polite"></div>
+
+    <section class="candidate-panel research-panel" aria-labelledby="candidateTitle">
+      <div class="panel-heading">
+        <div><p class="eyebrow">PRIORITIZE</p><h2 id="candidateTitle">Candidate ranking</h2><p>Model estimates are triage signals, not evidence of life.</p></div>
+        <span class="result-count" id="resultCount">— planets</span>
+      </div>
+      <div class="table-scroll">
+        <table class="candidate-table">
+          <thead><tr><th scope="col">Planet / host</th><th scope="col">Model estimate</th><th scope="col">ESI</th><th scope="col">Conservative HZ</th><th scope="col">Input completeness</th><th scope="col">Change</th></tr></thead>
+          <tbody id="candidateRows"><tr><td colspan="6">Loading records…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="table-footer"><span id="pageSummary">—</span><div><button class="button button-secondary button-small" id="pagePrevious" type="button">Previous</button><button class="button button-secondary button-small" id="pageNext" type="button">Next</button></div></div>
+    </section>
+
+    <section class="research-grid" aria-label="Selected planet evidence">
+      <section class="research-panel drift-panel" aria-labelledby="driftTitle">
+        <div class="panel-heading">
+          <div><p class="eyebrow">ASSESSMENT HISTORY</p><h2 id="driftTitle">Score drift</h2><p id="driftSubtitle">Select a candidate to inspect its score history.</p></div>
+          <span class="threshold-chip"><i aria-hidden="true"></i>Change threshold 0.15</span>
+        </div>
+        <div id="driftChart" class="chart-frame" role="img" aria-label="Habitability score timeline"></div>
+        <p class="chart-footnote" id="driftNote">Red markers indicate a score change greater than 0.15 between recorded assessments. The threshold is a change, not a score value.</p>
+      </section>
+
+      <section class="research-panel hz-panel" aria-labelledby="hzTitle">
+        <div class="panel-heading">
+          <div><p class="eyebrow">STELLAR INSOLATION</p><h2 id="hzTitle">Habitable-zone position</h2><p id="hzSubtitle">Flux is shown relative to Earth (1.0).</p></div>
+          <label class="compact-select" for="hostFilter"><span>Host</span><input id="hostFilter" type="search" list="hostOptions" value="All hosts" aria-label="Filter flux plot by host star"><datalist id="hostOptions"></datalist></label>
+        </div>
+        <div id="hzChart" class="chart-frame" role="img" aria-label="Planet flux compared with conservative habitable-zone range"></div>
+        <p class="chart-footnote" id="hzNote">The green band is derived from this host star’s conservative distance limits and luminosity.</p>
+      </section>
+
+      <section class="research-panel esi-panel" aria-labelledby="esiTitle">
+        <div class="panel-heading">
+          <div><p class="eyebrow">EARTH SIMILARITY</p><h2 id="esiTitle">ESI breakdown</h2><p id="esiSubtitle">Select a candidate to inspect its four components.</p></div>
+          <span class="result-count" id="esiScore">ESI —</span>
+        </div>
+        <dl id="planetRecord" class="planet-record"></dl>
+        <div id="esiBars" class="esi-bars"></div>
+        <p class="chart-footnote">Each bar uses an Earth-relative similarity (1 = Earth-like). Density and escape similarity require both radius and mass; missing inputs stay visible.</p>
+      </section>
+
+      <section class="research-panel trust-panel" aria-labelledby="trustTitle">
+        <div class="panel-heading"><div><p class="eyebrow">MODEL CONTEXT</p><h2 id="trustTitle">How to read this score</h2></div></div>
+        <div class="trust-callout"><strong>Exploratory ranking</strong><p>The refreshed model test set contains only 11 positive examples. Its high accuracy is not enough to establish reliable ranking or calibration.</p></div>
+        <div class="distribution" id="scoreDistribution" aria-label="Model score distribution"></div>
+        <p class="coverage-note" id="esiCoverage"></p>
+        <p class="chart-footnote">Class bands are display filters: High ≥ 0.70, Medium 0.40–0.69, Low &lt; 0.40. They are not validated scientific cutoffs.</p>
+      </section>
+    </section>
+    <footer class="research-footer">PHL column names are retained as source provenance in this preview. Live records show only fields stored by the connected database.</footer>
+  </main>
+</body>
+</html>

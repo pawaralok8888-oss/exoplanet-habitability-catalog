@@ -1,60 +1,48 @@
-from flask import Blueprint, request, jsonify
-from db import get_db_connection
+from flask import Blueprint, jsonify, request
 
-stars_bp = Blueprint('stars', __name__)
+import repositories
+import services
+from services import ValidationError
 
-@stars_bp.route('/', methods=['GET'])
+
+stars_bp = Blueprint("stars", __name__)
+
+
+@stars_bp.route("/", methods=["GET"])
 def get_stars():
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM stars")
-    stars = cursor.fetchall()
-    conn.close()
-    return jsonify(stars)
+    return jsonify(repositories.list_stars())
 
-@stars_bp.route('/<int:id>', methods=['GET'])
-def get_star(id):
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM stars WHERE star_id = %s", (id,))
-    star = cursor.fetchone()
-    conn.close()
-    if star:
-        return jsonify(star)
-    return jsonify({"error": "Star not found"}), 404
 
-@stars_bp.route('/', methods=['POST'])
+@stars_bp.route("/<int:star_id>", methods=["GET"])
+def get_star(star_id):
+    star = repositories.get_star(star_id)
+    if star is None:
+        return jsonify({"error": "Star not found"}), 404
+    return jsonify(star)
+
+
+@stars_bp.route("/", methods=["POST"])
 def create_star():
-    data = request.json
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO stars (name, temperature, radius, mass, distance_from_earth)
-        VALUES (%s, %s, %s, %s, %s)
-    """, (data.get('name'), data.get('temperature'), data.get('radius'), data.get('mass'), data.get('distance_from_earth')))
-    conn.commit()
-    star_id = cursor.lastrowid
-    conn.close()
+    try:
+        star_id = repositories.create_star(services.validate_star(request.get_json(silent=True)))
+    except ValidationError as exc:
+        return jsonify({"error": str(exc)}), 400
     return jsonify({"message": "Star created", "star_id": star_id}), 201
 
-@stars_bp.route('/<int:id>', methods=['PUT'])
-def update_star(id):
-    data = request.json
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        UPDATE stars SET name=%s, temperature=%s, radius=%s, mass=%s, distance_from_earth=%s
-        WHERE star_id = %s
-    """, (data.get('name'), data.get('temperature'), data.get('radius'), data.get('mass'), data.get('distance_from_earth'), id))
-    conn.commit()
-    conn.close()
+
+@stars_bp.route("/<int:star_id>", methods=["PUT"])
+def update_star(star_id):
+    try:
+        data = services.validate_star(request.get_json(silent=True))
+    except ValidationError as exc:
+        return jsonify({"error": str(exc)}), 400
+    if not repositories.update_star(star_id, data):
+        return jsonify({"error": "Star not found"}), 404
     return jsonify({"message": "Star updated"})
 
-@stars_bp.route('/<int:id>', methods=['DELETE'])
-def delete_star(id):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM stars WHERE star_id = %s", (id,))
-    conn.commit()
-    conn.close()
+
+@stars_bp.route("/<int:star_id>", methods=["DELETE"])
+def delete_star(star_id):
+    if not repositories.delete_star(star_id):
+        return jsonify({"error": "Star not found"}), 404
     return jsonify({"message": "Star deleted"})

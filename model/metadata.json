@@ -1,0 +1,17 @@
+{
+  "model_version": "1.0.0",
+  "feature_contract_version": "1",
+  "feature_columns": [
+    "esi_score",
+    "habitable_zone_flag",
+    "P_RADIUS",
+    "P_MASS",
+    "P_TEMP_EQUIL",
+    "P_PERIOD",
+    "P_FLUX",
+    "S_TEMPERATURE",
+    "S_RADIUS",
+    "S_MASS"
+  ],
+  "trained_at_utc": "2026-11-08T19:46:27.335567+00:00"
+}
