@@ -21,9 +21,11 @@ DELIMITER $$
 DROP PROCEDURE IF EXISTS GetDriftHistory$$
 CREATE PROCEDURE GetDriftHistory(IN p_id INT)
 BEGIN
-    SELECT predicted_habitability, prediction_timestamp
+    SELECT COALESCE(new_score, predicted_habitability) AS predicted_habitability,
+           COALESCE(changed_at, prediction_timestamp) AS prediction_timestamp,
+           old_score, new_score, score_delta, changed_fields, data_source, model_version
     FROM habitability_log
     WHERE planet_id = p_id
-    ORDER BY prediction_timestamp ASC;
+    ORDER BY prediction_timestamp ASC, log_id ASC;
 END$$
 DELIMITER ;
