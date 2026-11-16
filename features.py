@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from science import calculate_esi_values
 
 # ---------------------------------------------------------
 # File paths
@@ -25,31 +26,12 @@ os.makedirs("data/processed", exist_ok=True)
 
 
 # ---------------------------------------------------------
-# 1. HABITABLE ZONE FLAG
+# 1. CONSERVATIVE HABITABLE-ZONE FLAG
 # ---------------------------------------------------------
-# A planet is considered to be in the conservative
-# habitable zone when its incident stellar flux lies
-# between the conservative HZ minimum and maximum.
-
-def calculate_habitable_zone(row):
-
-    flux = row["P_FLUX"]
-    hz_min = row["S_HZ_CON_MIN"]
-    hz_max = row["S_HZ_CON_MAX"]
-
-    if pd.isna(flux) or pd.isna(hz_min) or pd.isna(hz_max):
-        return np.nan
-
-    if hz_min <= flux <= hz_max:
-        return 1
-
-    return 0
-
-
-df["habitable_zone_flag"] = df.apply(
-    calculate_habitable_zone,
-    axis=1
-)
+# P_HABZONE_CON is the catalog's precomputed conservative-zone flag.
+# S_HZ_CON_MIN/MAX are orbital-distance boundaries (AU), while P_FLUX is
+# incident flux (Earth = 1); comparing those values directly mixes units.
+df["habitable_zone_flag"] = pd.to_numeric(df["P_HABZONE_CON"], errors="coerce")
 
 
 # ---------------------------------------------------------
@@ -79,68 +61,9 @@ def similarity(value, earth_value):
 
 
 def calculate_esi(row):
-
-    radius = row["P_RADIUS"]
-    mass = row["P_MASS"]
-    temperature = row["P_TEMP_EQUIL"]
-
-    if pd.isna(radius) or pd.isna(mass) or pd.isna(temperature):
-        return np.nan
-
-    # Earth-normalized values
-    earth_radius = 1.0
-    earth_mass = 1.0
-    earth_temperature = 255.0
-
-    # Planet density relative to Earth.
-    # Density is proportional to mass / radius^3.
-    density = mass / (radius ** 3)
-    earth_density = 1.0
-
-    # Escape velocity relative to Earth.
-    # Escape velocity is proportional to sqrt(M / R).
-    escape_velocity = np.sqrt(mass / radius)
-    earth_escape_velocity = 1.0
-
-    # Individual similarity values
-    radius_similarity = similarity(
-        radius,
-        earth_radius
+    return calculate_esi_values(
+        row["P_RADIUS"], row["P_MASS"], row["P_TEMP_EQUIL"]
     )
-
-    density_similarity = similarity(
-        density,
-        earth_density
-    )
-
-    escape_similarity = similarity(
-        escape_velocity,
-        earth_escape_velocity
-    )
-
-    temperature_similarity = similarity(
-        temperature,
-        earth_temperature
-    )
-
-    # Weighted geometric mean
-    weights = {
-        "radius": 0.57,
-        "density": 1.07,
-        "escape": 0.70,
-        "temperature": 5.58
-    }
-
-    total_weight = sum(weights.values())
-
-    esi = (
-        radius_similarity ** weights["radius"]
-        * density_similarity ** weights["density"]
-        * escape_similarity ** weights["escape"]
-        * temperature_similarity ** weights["temperature"]
-    ) ** (1 / total_weight)
-
-    return esi
 
 
 df["esi_score"] = df.apply(

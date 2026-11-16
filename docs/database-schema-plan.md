@@ -1,5 +1,9 @@
 # Database Schema Plan (Week 1, Module D)
 
+> Historical planning document. The implemented application schema is authoritative;
+> see [architecture-and-data-contract.md](architecture-and-data-contract.md) and
+> `../database/schema.sql` for the field names currently used by the API.
+
 This is a plain-English explanation of how our database will be structured.
 This is the starting point for Week 2, where we'll write the actual SQL.
 

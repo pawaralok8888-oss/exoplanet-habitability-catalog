@@ -1,5 +1,6 @@
 flask
 flask-cors
+pydantic>=2,<3
 mysql-connector-python
 scikit-learn
 requests
